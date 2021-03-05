@@ -21,8 +21,8 @@ library(httr)
 library(jsonlite)
 library(parallel)
 
-## test mode toggle
-test_mode <- TRUE
+## set data resolution (more is better; max value equals number of counties)
+data_resolution <- 16 * 2
 
 ## PULL POPULATION DATA FROM CENSUS ============================================
 
@@ -38,6 +38,8 @@ state_codes <- as_tibble(state_codes[-1, ])
 
 close(state_url)
 remove(state_url)
+
+saveRDS(state_codes, file = "B_Intermediates/state.RData")
 
 ## remove areas outside the contiguous United States (CONUS)
 state_codes <- state_codes %>%
@@ -139,7 +141,7 @@ county_data$neighbor <- spDists(as.matrix(select(county_data, lon, lat)),
   longlat = TRUE) %>%
   as.dist() %>%
   hclust(method = "ward.D2") %>%
-  cutree(h = if_else(test_mode, 2^14, 100)) %>%
+  cutree(k = data_resolution) %>%
   duplicated()
 
 county_data <- county_data %>%
@@ -168,7 +170,7 @@ DigitPad <- function(x){str_sub(x + 100, 2)}
 
 query_list <- Sys.time() %>% str_sub(1, 4) %>% as.numeric() - 1
 query_list <- expand.grid(
-  "year" = (query_list - if_else(test_mode, 1, 9)):query_list,
+  "year" = (query_list - 29):query_list,
   "first_month" = DigitPad(seq(1:12))
   ) %>%
   as_tibble() %>%
@@ -251,7 +253,6 @@ RetrieveNOAAdata <- function(api_url, qh = query_header) {
   while (now_time <= 8.64) {
     now_time <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
     }
-  
 }
 
 ## remove data from query list if it has already been retrieved
@@ -265,7 +266,16 @@ noaa_data <- setNames(as.list(query_list$url),
 already_collected <- list.files("B_Intermediates/noaa_data")
 noaa_data <- noaa_data[!(names(noaa_data) %in% already_collected)]
 
+print(paste0("Time remaining: ",
+  round(length(noaa_data) * (8.65/3600), 1),
+  "hr"))
+
+print(paste0("Completion time: ",
+  Sys.time() + ceiling(length(noaa_data) * (8.65))
+  ))
+
 ## retrieve data
-lapply(noaa_data, RetrieveNOAAdata)
+TryWrapper <- function(x, f = RetrieveNOAAdata) try(f(x), silent = TRUE)
+lapply(noaa_data, TryWrapper)
 
 ##########==========##########==========##########==========##########=========
