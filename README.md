@@ -38,15 +38,9 @@ I am actively building the code for this project.  So far, the data pull code
 data.
 
 - [ ] Complete README Scripts description for script #1
-
 - [ ] Complete script #2 and associated part of the README Scripts section
-
 - [ ] Complete script #3 and associated part of the README Scripts section
-
 - [ ] Pull the rest of the data down from NOAA's server
-
 - [ ] Complete the description section once the scripts are drafted
-
 - [ ] Make sure gallery, README, and tool text are aligned
-
 - [ ] Polish writing and grammar in all three sets of text

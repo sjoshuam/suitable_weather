@@ -22,7 +22,7 @@ library(jsonlite)
 library(parallel)
 
 ## set data resolution (more is better; max value equals number of counties)
-data_resolution <- 16 * 2
+data_resolution <- 128
 
 ## PULL POPULATION DATA FROM CENSUS ============================================
 
@@ -161,7 +161,7 @@ the_url$query <- list(
   datasetid = "GHCND",
   units = "standard",
   limit = 1000,
-  datatypeid = "TMIN,TMAX,PRCP,SNOW"
+  datatypeid = "TMIN,TMAX"
   )
 the_url <- build_url(the_url)
 
@@ -177,8 +177,8 @@ query_list <- expand.grid(
   mutate(
     first_month = as.character(first_month),
     last_month = first_month,
-    first_day = DigitPad(12),
-    last_day = DigitPad(18)
+    first_day = DigitPad(15 - 5),
+    last_day  = DigitPad(15 + 5)
     ) %>%
   mutate(
     start_date = paste(year, first_month, first_day, sep = "-"),

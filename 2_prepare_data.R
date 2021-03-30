@@ -25,12 +25,14 @@ county_data <- read.dbf("A_Inputs/tl_2020_us_county.dbf", as.is = TRUE) %>%
 county_map <- map_data("county") %>% as_tibble()
 state_data <- readRDS("B_Intermediates/state.RData")
 population <- readRDS("B_Intermediates/population.RData")
+state_map <- map_data("state") %>% as_tibble()
 
 ## load weather data
 ReadWeather <- function(x) {
   x <- x %>%
     readRDS() %>%
     dplyr::group_by(datatype, date) %>%
+    dplyr::filter(!is.na(value)) %>%
     dplyr::summarize(value = mean(as.numeric(value)))
   return(x)
   }
@@ -69,13 +71,13 @@ weather_data <- weather_data %>%
   select(-file) %>%
   pivot_wider(names_from = datatype, values_from = value) %>%
   mutate(
-    TMIN = (TMAX + TMIN) / 2,
     GEOID = str_sub(county, 2)
     )
+colnames(weather_data) <- str_to_lower(colnames(weather_data))
 
 ## inventory date
 warning("Temporary expression - remove when no longer needed")
-tapply(weather_data$TMAX, weather_data[, c("month", "county")], length)
+tapply(weather_data$tmax, weather_data[, c("month", "county")], length)
 
 ## SHAPE COUNTY DATA ===========================================================
 
@@ -134,7 +136,7 @@ county_data <- county_data %>%
 county_map <- county_map %>%
   filter(!(state %in% c("AS", "GU", "MP", "PR", "VI", "AK", "HI")))
 
-## calculate interpolation coefficients for each county
+## clean county data
 county_data <- county_data %>%
   mutate(long = as.numeric(INTPTLON), lat = as.numeric(INTPTLAT)) %>%
   select(GEOID, county_name, state, population, long, lat, STATEFP, COUNTYFP,
@@ -144,21 +146,11 @@ colnames(county_data) <- str_to_lower(colnames(county_data))
 county_map <- select(county_map, -state_name)
 colnames(county_map) <- str_to_lower(colnames(county_map))
 
-## calculate county interpolation coefficients
-distance_coef <- spDists(
-  x = as.matrix(select(county_data, long, lat)),
-  longlat = TRUE
-  )
-distance_coef <- distance_coef / 100
-distance_coef[distance_coef < 1] <- 1
-distance_coef <- distance_coef^-2
-rownames(distance_coef) <- colnames(distance_coef) <- pull(county_data, geoid)
-
 ## EXPORT RESULTS ==============================================================
 
+saveRDS(state_map,  file = "B_Intermediates/state_map.RData")
 saveRDS(county_data, file = "B_Intermediates/county_data.RData")
 saveRDS(county_map,  file = "B_Intermediates/county_map.RData")
 saveRDS(weather_data,  file = "B_Intermediates/weather_data.RData")
-saveRDS(distance_coef,  file = "B_Intermediates/distance_coef.RData")
 
 ##########==========##########==========##########==========##########==========
