@@ -64,10 +64,9 @@ InterpolateTemperature <- function(w_data = weather_data, hours){
 ## score each location by percentage of days in desired temperature range
 ScoreLocation <- function(w_data = weather_data, months,
   temp_max = 79, temp_min = 50) {
-  
   w_data %>%
     mutate(temp_max = temp_max, temp_min = temp_min) %>%
-    filter(as.numeric(month) %in% months) %>%
+    filter(as.numeric(month) %in% which(month.name == months)) %>%
     mutate(suitable = (tmax <= temp_max) & (tmin >= temp_min)) %>%
     group_by(geoid, month) %>%
     summarize("suitable" = mean(as.numeric(suitable), na.rm = TRUE)) %>%

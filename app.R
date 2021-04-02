@@ -30,17 +30,15 @@ the_ui <- fluidPage(
   h3("TITLE HERE"),
   p("EXPLAINER HERE"),
   sidebarPanel(width = 3,
-    sliderInput("hours", min = 0, max = 23, post = ":00", value = c(10, 20),
-      label = "When will you be outside?"),
-    sliderInput("temp", min = 20, max = 110, post = "ºF", value = c(50, 80),
-      label = "What temperature range is acceptable?"),
-    checkboxGroupInput(
-      width = 3,
-      inputId = "months",
-      label = "What month(s) will you travel?",
-      choices = setNames(c(12, 1:2, 3:11), month.abb[c(12, 1:2, 3:11)]),
-      selected = current_month
-      )
+    selectInput(inputId = "month",
+      label = "When will you travel?", selected = month.name[current_month],
+      choices = month.name),
+    sliderInput("morning", min = 0, max = 12, post = ":00", value = c(10, 12),
+      label = "When will you be outside before noon?"),
+    sliderInput("afternoon", min = 12, max = 23, post = ":00", value = c(12, 20),
+      label = "When will you be outside after noon?"),
+    sliderInput("temp", min = 10, max = 99, post = "ºF", value = c(45, 80),
+      label = "What temperature range is acceptable?")
     ),
   mainPanel(height = 9,
     plotOutput("map")
@@ -52,9 +50,18 @@ the_ui <- fluidPage(
 
 the_server <- function(input, output) {
   output$map <- renderPlot({
-    weather_summary <- InterpolateTemperature(hours = input$hours,
+    before_noon <- ifelse(
+      input$morning[1] == input$morning[2],
+      NA, input$morning[1]:input$morning[2])
+    after_noon <- ifelse(
+      input$afternoon[1] == input$afternoon[2],
+      NA, input$afternoon[1]:input$afternoon[2])
+    all_hours <- c(before_noon, after_noon)
+    all_hours <- ifelse(all(is.na(all_hours)),
+      c(input$morning, input$afternoon), all_hours[!is.na(all_hours)])
+    weather_summary <- InterpolateTemperature(hours = all_hours,
       w_data = weather_data)
-    weather_summary <- ScoreLocation(months = input$months,
+    weather_summary <- ScoreLocation(months = input$month,
       w_data = weather_summary,
       temp_max = max(input$temp), temp_min = min(input$temp))
     weather_summary <- GeneratePlot(w_summary = weather_summary,
