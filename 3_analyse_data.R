@@ -37,7 +37,6 @@ county_map <- filter(county_map, !(state %in% c("AK", "HI")))
 InterpolateTemperature <- function(w_data = weather_data, hours){
   
   ## generate interpolation factors for time of day
-  hours <- min(hours):max(hours)
   hour_temp <- tibble(
     hour = c(6:14, 15:23, 0:5),
     factor = c(
@@ -63,7 +62,7 @@ InterpolateTemperature <- function(w_data = weather_data, hours){
 
 ## score each location by percentage of days in desired temperature range
 ScoreLocation <- function(w_data = weather_data, months,
-  temp_max = 79, temp_min = 50) {
+  temp_max = 80, temp_min = 40) {
   w_data %>%
     mutate(temp_max = temp_max, temp_min = temp_min) %>%
     filter(as.numeric(month) %in% which(month.name == months)) %>%
@@ -86,13 +85,13 @@ GeneratePlot <- function(w_summary, l_map = location_map,
     coord_map(projection = "sinusoidal", orientation = c(90, 0, -98.5),
       xlim = -98 + 1 + c(-1, 1) * 21
       ) +
-    scale_fill_binned(breaks = c(50, 70), limits = c(0, 100),
-      low = hsv(h = 3 / 12, s = 0.8, v = 0.0),
-      high = hsv(h = 3 / 12, s = 0.8, v = 1.0),
+    scale_fill_binned(breaks = c(49, 65, 80), limits = c(0, 100),
+      low = hsv( h = 3 / 12, s = 1.0, v = 0.0),
+      high = hsv(h = 3 / 12, s = 0.5, v = 1.0),
       name = "Days In\nTemperature\nRange (%)") +
-    scale_color_binned(breaks = c(50, 70), limits = c(0, 100),
-      low = hsv(h = 9 / 12, s = 0.8, v = 0.0),
-      high = hsv(h = 3 / 12, s = 0.8, v = 1.0),
+    scale_color_binned(breaks = c(49, 65, 80), limits = c(0, 100),
+      low = hsv( h = 3 / 12, s = 1.0, v = 0.0),
+      high = hsv(h = 3 / 12, s = 0.5, v = 1.0),
       name = "Days In\nTemperature\nRange (%)") +
     xlab(NULL) + ylab(NULL) +
     geom_polygon(
@@ -151,6 +150,30 @@ location_map <- data.frame(
   do.call(what = rbind, args = location_map)) %>%
   as_tibble()
 
+## OPTIMIZE TIME RANGES ========================================================
+
+outdoor_times <- tribble(
+  ~month, ~am_start, ~am_end, ~pm_start, ~pm_end, ~schedule,
+  11, 12, 12, 13, 19, "cold",
+  12, 12, 12, 13, 19, "cold",
+  01, 12, 12, 13, 19, "cold",
+  02, 12, 12, 13, 19, "cold",
+  03, 12, 12, 13, 19, "cold",
+  
+  04, 09, 12, 17, 20, "switch",
+  10, 09, 12, 17, 20, "switch",
+  
+  05, 07, 11, 18, 20, "Hot",
+  06, 07, 11, 18, 20, "Hot",
+  07, 07, 11, 18, 20, "Hot",
+  08, 07, 11, 18, 20, "Hot",
+  09, 07, 11, 18, 20, "Hot"
+  )
+
+
+## determine best hours to be outdoors for each group of months
+
+
 ## TEST FUNCTIONS ==================================================
 
 save(InterpolateTemperature, ScoreLocation, GeneratePlot,
@@ -158,3 +181,6 @@ save(InterpolateTemperature, ScoreLocation, GeneratePlot,
   file = "app_support.Rdata")
 
 ##########==========##########==========##########==========##########==========
+
+
+
