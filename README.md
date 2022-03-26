@@ -6,6 +6,9 @@ a specific location in a specific time of the year.  The tool provides useful
 climate knowledge that can inform road trip planning.  It currently only covers
 the contiguous United States.
 
+DEPRECATION NOTE: The travel_weather project supercedes this one.  It's simplier,
+static approach provides better functionality for fewer computational resources.
+
 ### Repository Layout
 
 This repository contains 3-4 directories.  For convenience, each directory name
